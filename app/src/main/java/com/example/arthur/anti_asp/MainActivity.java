@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import com.example.arthur.anti_asp.R;
 
+import static java.lang.Math.sqrt;
+
 public class MainActivity extends Activity implements SensorEventListener {
     private SensorManager manager;
   private TextView values;
@@ -22,6 +24,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     values = (TextView)findViewById(R.id.text_view);
     manager = (SensorManager)getSystemService(SENSOR_SERVICE);
+
+    String filename = "acc.csv";
   }
 
   @Override
@@ -53,10 +57,16 @@ public class MainActivity extends Activity implements SensorEventListener {
   public void onSensorChanged(SensorEvent event) {
     // TODO Auto-generated method stub
     if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+      float accX = event.values[SensorManager.DATA_X];
+      float accY = event.values[SensorManager.DATA_Y];
+      float accZ = event.values[SensorManager.DATA_Z];
+      float combine = (float)sqrt(accX*accX + accY*accY + accZ*accZ);
+
       String str = "加速度センサの値"
-          + "\nX: " + event.values[SensorManager.DATA_X]
-          + "\nY: " + event.values[SensorManager.DATA_Y]
-          + "\nZ: " + event.values[SensorManager.DATA_Z];
+          + "\nX: " + accX
+          + "\nY: " + accY
+          + "\nZ: " + accZ
+          + "\n合成加速度: " + combine;
       values.setText(str);
     }
   }
