@@ -3,6 +3,7 @@ package com.example.arthur.anti_asp;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import static java.lang.Math.sqrt;
 import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
@@ -13,9 +14,21 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+import weka.classifiers.Classifier;
+import weka.classifiers.Evaluation;
+import weka.classifiers.functions.SMO;
+import weka.core.Attribute;
+import weka.core.FastVector;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.converters.ConverterUtils.DataSource;
+
 import com.example.arthur.anti_asp.R;
 
-import static java.lang.Math.sqrt;
+//TODO サンプリングした各状態のデータをまとめてarffを作成し, wekaのデータセットに設定する
+
+
 
 public class MainActivity extends Activity implements SensorEventListener {
   private SensorManager manager;
@@ -56,6 +69,14 @@ public class MainActivity extends Activity implements SensorEventListener {
       }
     });
 
+      Button button_estimate = findViewById(R.id.button_estimate);
+      button_estimate.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+              //weka.main(XXXXX.csv);//wekaに現在の3軸加速度を引き渡し, 推定
+
+          }
+      });
   }
 
 
@@ -68,7 +89,8 @@ public class MainActivity extends Activity implements SensorEventListener {
             Context.MODE_PRIVATE);){
 
       fileOutputstream.write(str.getBytes());
-      System.out.println("出力が完了しました。");
+      System.out.println("csv出力が完了しました。");
+      Toast.makeText(this, "出力が完了しました", Toast.LENGTH_SHORT).show();
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -115,4 +137,6 @@ public class MainActivity extends Activity implements SensorEventListener {
       values.setText(str);
     }
   }
-}
+
+  }
+
