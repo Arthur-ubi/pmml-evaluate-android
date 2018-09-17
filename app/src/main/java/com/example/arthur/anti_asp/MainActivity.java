@@ -39,7 +39,7 @@ import weka.core.converters.ConverterUtils;
 
 import com.example.arthur.anti_asp.R;
 
-//TODO サンプリングした各状態のデータをまとめてarffを作成し, wekaのデータセットに設定する
+//TODO arffをwekaのデータセットに設定, サンプリングを10秒程度に設定
 
 public class MainActivity extends Activity implements SensorEventListener {
   private SensorManager manager;
@@ -62,7 +62,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_s.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val  = String.valueOf(combine + ",");
+        String val  = String.valueOf(combine + "," + "stand\n");
         saveFile("acc_stand.csv", val);
       }
     });
@@ -70,7 +70,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_w.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val = String.valueOf(combine + ",");
+        String val = String.valueOf(combine + "," + "walk\n");
         saveFile("acc_walk.csv", val);
       }
     });
@@ -78,7 +78,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_r.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val = String.valueOf(combine + ",");
+        String val = String.valueOf(combine + "," + "run\n");
         saveFile("acc_run.csv", val);
       }
     });
@@ -88,8 +88,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     button_learn.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String path = Environment.getExternalStorageDirectory().getPath() + "/anti_asp" + "/acc_stand.csv";
-        CsvToArff(path, "stand");
+        String path = "acc_stand.csv";
+        CsvToArff(/*path, "stand"*/);
 
         /*weka識別器生成
         try {
@@ -137,63 +137,67 @@ public class MainActivity extends Activity implements SensorEventListener {
 
   }
   //csv to arff converter
-  public void  CsvToArff(String file, String STATUS) {
+  public void  CsvToArff(/*String file, String STATUS*/) {
 
     // try-with-resources
-    try {
-      FileInputStream fis = new FileInputStream(file);
-      System.out.println(file + "ファイル名");//test
-      //byte[] size = new byte[fis.available()];
-      //fis.read(size);
-
-      InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
-
-      StringTokenizer st = new StringTokenizer(file, ",");
-      int length = st.countTokens();
-      String[] tokens = new String[length];
-      for (int i = 0; i < length; i++) {
-        tokens[i] = st.nextToken();
-      }
+    String data = null;
       try {
+          // 出力ファイルの作成
+          FileOutputStream fos = new FileOutputStream(new File("/storage/emulated/0/anti_asp/acc.arff"),false);
 
-        // 出力ファイルの作成
-        FileWriter f = new FileWriter(Environment.getExternalStorageDirectory().getPath() + "/anti_asp" + "/acc.arff", false);
-        PrintWriter p = new PrintWriter(new BufferedWriter(f));
+          // ヘッダーを設定する
+          String hedder =("@RERATION acceleration\n\n" + "@ATTRIBUTE acc real\n" + "@ATTRIBUTE state  {stand,walk,run}\n\n" + "@DATA\n");
+          fos.write(hedder.getBytes());
 
-        // ヘッダーを指定する
-        p.print("@RERATION acceleration\n");
-        p.println();
-        p.print("@ATTRIBUTE acc real");
-        p.println();
-        p.print("@ATTRIBUTE state  {stand,walk,run}");
-        p.println();
-        p.println();
-        p.print("@DATA");
-        p.println();
 
-        // 内容をセットする
-        for (int i = 0; i < length; i++) {
-          p.print(tokens[i]);
-          p.print(",");
-          p.print(STATUS + "\n");
-          //p.print();//改行
+          //acc_stand.csv -> acc.arff
+          try {
+              FileInputStream read_file = new FileInputStream("/storage/emulated/0/anti_asp/acc_stand.csv");
+              byte[] size = new byte[read_file.available()];
+              read_file.read(size);
+              data = new String(size);
+
+          } catch (IOException ex){
+              ex.printStackTrace();
+              System.out.println("acc_stand.csvのオープンに失敗しました");
+          }
+              fos.write(data.getBytes());
+              System.out.println("acc_standをarffに出力しました");
+
+          //acc_walk.csv -> acc.arff
+          try {
+            FileInputStream read_file = new FileInputStream("/storage/emulated/0/anti_asp/acc_walk.csv");
+            byte[] size = new byte[read_file.available()];
+            read_file.read(size);
+            data = new String(size);
+
+          } catch (IOException ex){
+            ex.printStackTrace();
+            System.out.println("acc_walk.csvのオープンに失敗しました");
+          }
+          fos.write(data.getBytes());
+          System.out.println("acc_walkをarffに出力しました");
+
+        //acc_run.csv -> acc.arff
+        try {
+          FileInputStream read_file = new FileInputStream("/storage/emulated/0/anti_asp/acc_run.csv");
+          byte[] size = new byte[read_file.available()];
+          read_file.read(size);
+          data = new String(size);
+
+        } catch (IOException ex){
+          ex.printStackTrace();
+          System.out.println("acc_wrun.csvのオープンに失敗しました");
+        }
+        fos.write(data.getBytes());
+        System.out.println("acc_runをarffに出力しました");
+
+        } catch (IOException ex) {
+          ex.printStackTrace();
+          System.out.println("arffの出力に失敗しました");
         }
 
-        // ファイルに書き出し閉じる
-        p.close();
-
-        System.out.println("ファイル出力完了！");
-
-      } catch (IOException ex) {
-        ex.printStackTrace();
-        System.out.println("arff出力失敗");
-      }
-      System.out.println("arff出力が完了しました");
-    } catch (IOException e) {
-      e.printStackTrace();
-      System.out.println("csv読み込み失敗");
-    }
-
+        Toast.makeText(this, "arff出力が完了しました", Toast.LENGTH_SHORT).show();
 
   }
 
