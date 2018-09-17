@@ -28,6 +28,13 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import weka.classifiers.Classifier;
+import weka.classifiers.trees.J48;
+import weka.core.Instances;
+import weka.core.converters.ArffSaver;
+import weka.core.converters.CSVLoader;
+import weka.core.converters.ConverterUtils;
+
 import com.example.arthur.anti_asp.R;
 
 //TODO サンプリングした各状態のデータをまとめてarffを作成し, wekaのデータセットに設定する
@@ -37,6 +44,7 @@ public class MainActivity extends Activity implements SensorEventListener {
   private SensorManager manager;
   private TextView values;
   float combine;
+  String input_csv;
 
   /** Called when the activity is first created. */
   @Override
@@ -52,7 +60,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_s.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val  = String.valueOf(combine);
+        String val  = String.valueOf(combine + ",");
         saveFile("acc_stand.csv", val);
       }
     });
@@ -60,7 +68,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_w.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val = String.valueOf(combine);
+        String val = String.valueOf(combine + ",");
         saveFile("acc_walk.csv", val);
       }
     });
@@ -68,21 +76,42 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_r.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val = String.valueOf(combine);
+        String val = String.valueOf(combine + ",");
         saveFile("acc_run.csv", val);
       }
     });
 
-      Button button_estimate = findViewById(R.id.button_estimate);
-      button_estimate.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            //String file = readFile("acc_stand.csv");
-            float combined_acc = combine;
-            //weka.main(combined_acc);//wekaに現在の3軸加速度(csv?生の値？)を引き渡し, 推定
+    //学習ボタン: csvからarff生成 & wekaの学習フェーズだけ実行(その部分のcodeだけこの中にべた貼りでいいかも)
+    Button button_learn = findViewById(R.id.button_learn);
+    button_learn.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
 
-          }
-      });
+        //weka識別器生成
+        try {
+          ConverterUtils.DataSource source = new ConverterUtils.DataSource("acc.arff");
+          Instances instances = source.getDataSet();
+          instances.setClassIndex(1);
+          Classifier classifier = new J48();
+          classifier.buildClassifier(instances);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+
+    });
+
+    Button button_estimate = findViewById(R.id.button_estimate);
+    button_estimate.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        //String file = readFile("acc_stand.csv");
+        float combined_acc = combine;
+        //weka.main(combined_acc);//wekaに現在の3軸加速度(csv?生の値？)を引き渡し, 推定
+
+      }
+    });
+
   }
 
   //ファイル保存
@@ -90,7 +119,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     // try-with-resources
     try (FileOutputStream fileOutputstream = openFileOutput(file,
-            Context.MODE_PRIVATE);){
+            Context.MODE_APPEND);){
 
       fileOutputstream.write(str.getBytes());
       System.out.println("csv出力が完了しました。");
@@ -111,13 +140,14 @@ public class MainActivity extends Activity implements SensorEventListener {
                  new InputStreamReader(fileInputStream,"UTF-8"));
     ) {
 
-
     } catch (IOException e) {
       e.printStackTrace();
     }
 
     return text;
   }
+
+
 
   @Override
   protected void onStop() {
@@ -158,6 +188,7 @@ public class MainActivity extends Activity implements SensorEventListener {
       values.setText(str);
     }
   }
+  //外部ストレージに保存するためのパーミッション確認
   private static final int REQUEST_EXTERNAL_STORAGE_CODE = 0x01;
   private static String[] mPermissions = {
           Manifest.permission.READ_EXTERNAL_STORAGE,
