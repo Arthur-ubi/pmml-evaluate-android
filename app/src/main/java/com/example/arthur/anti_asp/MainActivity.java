@@ -9,7 +9,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
+
 import static java.lang.Math.sqrt;
 import android.Manifest;
 import android.app.Activity;
@@ -44,6 +47,7 @@ public class MainActivity extends Activity implements SensorEventListener {
   private TextView values;
   float combine;
   String input_csv;
+  String STATUS;
 
   /** Called when the activity is first created. */
   @Override
@@ -86,7 +90,9 @@ public class MainActivity extends Activity implements SensorEventListener {
       @Override
       public void onClick(View v) {
 
-        //weka識別器生成
+        CsvToArff("acc_stand.csv", "stand");
+
+        /*weka識別器生成
         try {
           ConverterUtils.DataSource source = new ConverterUtils.DataSource("acc.arff");
           Instances instances = source.getDataSet();
@@ -95,7 +101,7 @@ public class MainActivity extends Activity implements SensorEventListener {
           classifier.buildClassifier(instances);
         } catch (Exception e) {
           e.printStackTrace();
-        }
+        }*/
       }
 
     });
@@ -117,8 +123,8 @@ public class MainActivity extends Activity implements SensorEventListener {
   public void saveFile(String file, String str/*float value*/) {
 
     // try-with-resources
-    try (FileOutputStream fileOutputstream = openFileOutput(file,
-            Context.MODE_APPEND);){
+    try {
+      FileOutputStream fileOutputstream = openFileOutput(file, Context.MODE_APPEND);
 
       fileOutputstream.write(str.getBytes());
       System.out.println("csv出力が完了しました。");
@@ -129,21 +135,66 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
   }
-  //ファイル読み込み
-  public String readFile(String file) {
-    String text = null;
+  //csv to arff converter
+  public void  CsvToArff(String file, String STATUS) {
 
     // try-with-resources
-    try (FileInputStream fileInputStream = openFileInput(file);
-         BufferedReader reader= new BufferedReader(
-                 new InputStreamReader(fileInputStream,"UTF-8"));
-    ) {
+    try {
+      FileInputStream fileInputStream = openFileInput(file);
+      BufferedReader reader = new BufferedReader(
+              new InputStreamReader(fileInputStream, "UTF-8"));
 
+      StringTokenizer st = new StringTokenizer(file, ",");
+      int length = st.countTokens();
+      String[] tokens = new String[length];
+      for (int i = 0; i < length; i++) {
+        tokens[i] = st.nextToken();
+      }
+      try {
+
+        // 出力ファイルの作成
+        FileWriter f = new FileWriter(Environment.getExternalStorageDirectory().getPath() + "/temp0917" + "/acc.arff", false);
+        //FileOutputStream f = openFileOutput(file, Context.MODE_APPEND);
+        PrintWriter p = new PrintWriter(new BufferedWriter(f));
+
+        //FileOutputStream f = openFileOutput(file, Context.MODE_APPEND);
+        //fileOutputstream.write(str.getBytes());
+
+        // ヘッダーを指定する
+        p.print("@RERATION acceleration");
+        p.println();
+        p.print("@ATTRIBUTE acc real");
+        p.println();
+        p.print("@ATTRIBUTE state  {stand,walk,run}");
+        p.println();
+        p.println();
+        p.print("@DATA");
+        p.println();
+
+        // 内容をセットする
+        for (int i = 0; i < length; i++) {
+          p.print(tokens[i]);
+          p.print(",");
+          p.print(STATUS);
+          p.println();//改行
+        }
+
+        // ファイルに書き出し閉じる
+        p.close();
+
+        System.out.println("ファイル出力完了！");
+
+      } catch (IOException ex) {
+        ex.printStackTrace();
+        System.out.println("arff出力失敗1");
+      }
+      System.out.println("arff出力が完了しました");
     } catch (IOException e) {
       e.printStackTrace();
+      System.out.println("arff出力失敗2");
     }
 
-    return text;
+
   }
 
 
@@ -187,6 +238,7 @@ public class MainActivity extends Activity implements SensorEventListener {
       values.setText(str);
     }
   }
+
   //外部ストレージに保存するためのパーミッション確認
   private static final int REQUEST_EXTERNAL_STORAGE_CODE = 0x01;
   private static String[] mPermissions = {
