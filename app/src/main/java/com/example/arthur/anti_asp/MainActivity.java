@@ -1,16 +1,29 @@
 package com.example.arthur.anti_asp;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.List;
 import static java.lang.Math.sqrt;
+
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -32,6 +45,8 @@ import com.example.arthur.anti_asp.R;
 public class MainActivity extends Activity implements SensorEventListener {
   private SensorManager manager;
   private TextView values;
+  float combine;
+
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -46,25 +61,24 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_s.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        //String text = editText.getText().toString();
-        String text = "This is values of stand";
-        saveFile("acc_stand", text);
+        String val  = String.valueOf(combine);
+        saveFile("acc_stand.csv", val);
       }
     });
     Button buttonSave_w = findViewById(R.id.button_l_walk);
     buttonSave_w.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String text = "This is values of stand";
-        saveFile("acc_walk", text);
+        String val = String.valueOf(combine);
+        saveFile("acc_walk.csv", val);
       }
     });
     Button buttonSave_r = findViewById(R.id.button_l_run);
     buttonSave_r.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String text = "This is values of stand";
-        saveFile("acc_run", text);
+        String val = String.valueOf(combine);
+        saveFile("acc_run.csv", val);
       }
     });
 
@@ -72,16 +86,16 @@ public class MainActivity extends Activity implements SensorEventListener {
       button_estimate.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View v) {
-              //weka.main(XXXXX.csv);//wekaに現在の3軸加速度を引き渡し, 推定
+            //String file = readFile("acc_stand.csv");
+            float combined_acc = combine;
+            //weka.main(combined_acc);//wekaに現在の3軸加速度(csv?生の値？)を引き渡し, 推定
 
           }
       });
   }
 
-
-
   //ファイル保存
-  public void saveFile(String file, String str) {
+  public void saveFile(String file, String str/*float value*/) {
 
     // try-with-resources
     try (FileOutputStream fileOutputstream = openFileOutput(file,
@@ -95,6 +109,23 @@ public class MainActivity extends Activity implements SensorEventListener {
       e.printStackTrace();
     }
 
+  }
+  //ファイル読み込み
+  public String readFile(String file) {
+    String text = null;
+
+    // try-with-resources
+    try (FileInputStream fileInputStream = openFileInput(file);
+         BufferedReader reader= new BufferedReader(
+                 new InputStreamReader(fileInputStream,"UTF-8"));
+    ) {
+
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return text;
   }
 
   @Override
@@ -126,7 +157,7 @@ public class MainActivity extends Activity implements SensorEventListener {
       float accX = event.values[SensorManager.DATA_X];
       float accY = event.values[SensorManager.DATA_Y];
       float accZ = event.values[SensorManager.DATA_Z];
-      float combine = (float)sqrt(accX*accX + accY*accY + accZ*accZ);
+      combine = (float)sqrt(accX*accX + accY*accY + accZ*accZ);
 
       String str = "加速度センサの値"
               + "\nX: " + accX
@@ -136,6 +167,24 @@ public class MainActivity extends Activity implements SensorEventListener {
       values.setText(str);
     }
   }
+  private static final int REQUEST_EXTERNAL_STORAGE_CODE = 0x01;
+  private static String[] mPermissions = {
+          Manifest.permission.READ_EXTERNAL_STORAGE,
+          Manifest.permission.WRITE_EXTERNAL_STORAGE,
+  };
 
+  private static void verifyStoragePermissions(Activity activity) {
+    int readPermission = ContextCompat.checkSelfPermission(activity, mPermissions[0]);
+    int writePermission = ContextCompat.checkSelfPermission(activity, mPermissions[1]);
+
+    if (writePermission != PackageManager.PERMISSION_GRANTED ||
+            readPermission != PackageManager.PERMISSION_GRANTED) {
+      ActivityCompat.requestPermissions(
+              activity,
+              mPermissions,
+              REQUEST_EXTERNAL_STORAGE_CODE
+      );
+    }
   }
+}
 
