@@ -88,8 +88,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     button_learn.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-
-        CsvToArff("acc_stand.csv", "stand");
+        String path = Environment.getExternalStorageDirectory().getPath() + "/anti_asp" + "/acc_stand.csv";
+        CsvToArff(path, "stand");
 
         /*weka識別器生成
         try {
@@ -123,9 +123,11 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     // try-with-resources
     try {
-      FileOutputStream fileOutputstream = openFileOutput(file, Context.MODE_APPEND);
-
+      FileOutputStream fileOutputstream = new FileOutputStream(new File("/storage/emulated/0/anti_asp/" + file), true);
       fileOutputstream.write(str.getBytes());
+      //FileWriter f = new FileWriter("/storage/emulated/0/anti_asp/" + file, true);
+      //PrintWriter p = new PrintWriter(new BufferedWriter(f));
+
       System.out.println("csv出力が完了しました。");
       Toast.makeText(this, "出力が完了しました", Toast.LENGTH_SHORT).show();
 
@@ -139,9 +141,12 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     // try-with-resources
     try {
-      FileInputStream fileInputStream = openFileInput(file);
-      BufferedReader reader = new BufferedReader(
-              new InputStreamReader(fileInputStream, "UTF-8"));
+      FileInputStream fis = new FileInputStream(file);
+      System.out.println(file + "ファイル名");//test
+      //byte[] size = new byte[fis.available()];
+      //fis.read(size);
+
+      InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
 
       StringTokenizer st = new StringTokenizer(file, ",");
       int length = st.countTokens();
@@ -152,15 +157,11 @@ public class MainActivity extends Activity implements SensorEventListener {
       try {
 
         // 出力ファイルの作成
-        FileWriter f = new FileWriter(Environment.getExternalStorageDirectory().getPath() + "/temp0917" + "/acc.arff", false);
-        //FileOutputStream f = openFileOutput(file, Context.MODE_APPEND);
+        FileWriter f = new FileWriter(Environment.getExternalStorageDirectory().getPath() + "/anti_asp" + "/acc.arff", false);
         PrintWriter p = new PrintWriter(new BufferedWriter(f));
 
-        //FileOutputStream f = openFileOutput(file, Context.MODE_APPEND);
-        //fileOutputstream.write(str.getBytes());
-
         // ヘッダーを指定する
-        p.print("@RERATION acceleration");
+        p.print("@RERATION acceleration\n");
         p.println();
         p.print("@ATTRIBUTE acc real");
         p.println();
@@ -174,8 +175,8 @@ public class MainActivity extends Activity implements SensorEventListener {
         for (int i = 0; i < length; i++) {
           p.print(tokens[i]);
           p.print(",");
-          p.print(STATUS);
-          p.println();//改行
+          p.print(STATUS + "\n");
+          //p.print();//改行
         }
 
         // ファイルに書き出し閉じる
@@ -185,12 +186,12 @@ public class MainActivity extends Activity implements SensorEventListener {
 
       } catch (IOException ex) {
         ex.printStackTrace();
-        System.out.println("arff出力失敗1");
+        System.out.println("arff出力失敗");
       }
       System.out.println("arff出力が完了しました");
     } catch (IOException e) {
       e.printStackTrace();
-      System.out.println("arff出力失敗2");
+      System.out.println("csv読み込み失敗");
     }
 
 
