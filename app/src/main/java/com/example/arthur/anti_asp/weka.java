@@ -14,7 +14,6 @@ import weka.core.converters.ConverterUtils.DataSource;
 import weka.core.converters.CSVLoader;
 import com.example.arthur.anti_asp.R;
 
-
 public class weka {
 
     public static void main(String[] args, float c_acc) {

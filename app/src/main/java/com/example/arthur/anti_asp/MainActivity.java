@@ -39,7 +39,6 @@ import com.example.arthur.anti_asp.R;
 
 //TODO サンプリングした各状態のデータをまとめてarffを作成し, wekaのデータセットに設定する
 
-
 public class MainActivity extends Activity implements SensorEventListener {
   private SensorManager manager;
   private TextView values;
