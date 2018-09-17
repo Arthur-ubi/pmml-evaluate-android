@@ -12,7 +12,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-
 import static java.lang.Math.sqrt;
 import android.Manifest;
 import android.app.Activity;
