@@ -2,6 +2,8 @@ package com.example.arthur.anti_asp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -33,11 +35,20 @@ import weka.core.converters.ConverterUtils;
 
 import static java.lang.Math.sqrt;
 
-//TODO arffをwekaのデータセットに設定, サンプリングを10秒程度に設定
+//TODO サンプリングを10秒程度に設定
 
 public class MainActivity extends Activity implements SensorEventListener {
   private SensorManager manager;
   private TextView values;
+  private TextView status;
+  int click_flag = 0;
+  int counter = 0;
+  
+  boolean dflag = false;
+  boolean stand = false;
+  boolean walk = false;
+  boolean run = false;
+  
   float combined_acc;
   String input_csv;
   String STATUS;
@@ -52,28 +63,51 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     values = (TextView)findViewById(R.id.text_view);
     manager = (SensorManager)getSystemService(SENSOR_SERVICE);
+    status = (TextView)findViewById(R.id.status_view);
+    status.setText("待機中");
+
+    //削除ボタン
+    Button Delete_button = findViewById(R.id.delete_button);
+    Delete_button.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        File file1 = new File("/storage/emulated/0/anti_asp/acc.arff");
+        file1.delete();
+        File file2 = new File("/storage/emulated/0/anti_asp/acc_stand.csv");
+        file2.delete();
+        File file3 = new File("/storage/emulated/0/anti_asp/acc_walk.csv");
+        file3.delete();
+        File file4 = new File("/storage/emulated/0/anti_asp/acc_run.csv");
+        file4.delete();
+        //Toast.makeText(this, "学習データの削除が完了しました", Toast.LENGTH_SHORT).show();
+        delete_Dialog();
+        }});
 
     //サンプリングボタン
     Button buttonSave_s = findViewById(R.id.button_l_stand);
     buttonSave_s.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val  = String.valueOf(combined_acc + "," + "stand\n");
-        saveFile("acc_stand.csv", val);
+          Dialog();
+          stand = true;
       }
     });
     Button buttonSave_w = findViewById(R.id.button_l_walk);
     buttonSave_w.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
+        Dialog();
+        walk = true;
         String val = String.valueOf(combined_acc + "," + "walk\n");
-        saveFile("acc_walk.csv", val);
+        
       }
     });
     Button buttonSave_r = findViewById(R.id.button_l_run);
     buttonSave_r.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
+        Dialog();
+        run = true;
         String val = String.valueOf(combined_acc + "," + "run\n");
         saveFile("acc_run.csv", val);
       }
@@ -114,7 +148,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     button_estimate.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        weka();//wekaに現在の3軸加速度を引き渡し, 推定
+       click_flag = 1;//wekaに現在の3軸加速度を引き渡し, 推定
 
       }
     });
@@ -132,7 +166,7 @@ public class MainActivity extends Activity implements SensorEventListener {
       //PrintWriter p = new PrintWriter(new BufferedWriter(f));
 
       System.out.println("csv出力が完了しました。");
-      Toast.makeText(this, "出力が完了しました", Toast.LENGTH_SHORT).show();
+      //Toast.makeText(this, "出力が完了しました", Toast.LENGTH_SHORT).show();
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -243,7 +277,27 @@ public class MainActivity extends Activity implements SensorEventListener {
               + "\nZ: " + accZ
               + "\n合成加速度: " + combined_acc;
       values.setText(str);
+      counter++;
+      
+      //stand
+      if(dflag == true && stand == true){
+        saveFile("acc_stand.csv", String.valueOf(combined_acc + "," + "stand\n"));
+      }
+      //walk
+      if(dflag == true && walk == true){
+        saveFile("acc_walk.csv", String.valueOf(combined_acc + "," + "walk\n"));
+      }
+      //run
+      if(dflag == true && run == true){
+        saveFile("acc_run.csv", String.valueOf(combined_acc + "," + "run\n"));
+      }
+      
+      if(click_flag == 1 && counter%10 == 0){
+        weka();
+      }
+
     }
+
   }
 
   public void weka() {
@@ -266,16 +320,20 @@ public class MainActivity extends Activity implements SensorEventListener {
       instance.setDataset(instances);
 
       double result = classifier.classifyInstance(instance);
-      System.out.println(result);
+      //System.out.println(result);
 
       if (result == 0.0){
         //stand
+        status.setText("STANDING");
         System.out.println("STANDING");
+
       }else if(result == 1.0){
         //walk
+        status.setText("WALKING\n\n歩きスマホはやめましょう");
         System.out.println("WALKING");
       }else if(result == 2.0){
         //run
+        status.setText("RUNNING\n\n危険！走りスマホ");
         System.out.println("RUNNING");
       }
     } catch (Exception e) {
@@ -305,6 +363,31 @@ public class MainActivity extends Activity implements SensorEventListener {
               REQUEST_EXTERNAL_STORAGE_CODE
       );
     }
+  }
+
+  public void Dialog(){
+    dflag = true;
+    // Use the Builder class for convenient dialog construction
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setMessage("10秒程度　経過したら終了してください")
+            .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+              dflag = false;
+              }
+            });
+    builder.show();
+  }
+  public void delete_Dialog(){
+    dflag = true;
+    // Use the Builder class for convenient dialog construction
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setMessage("学習データを削除しました")
+            .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                dflag = false;
+              }
+            });
+    builder.show();
   }
 }
 
