@@ -1,21 +1,14 @@
 package com.example.arthur.anti_asp;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 import static java.lang.Math.sqrt;
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -31,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import weka.classifiers.Classifier;
+import weka.classifiers.Evaluation;
 import weka.classifiers.trees.J48;
 import weka.core.Instances;
 import weka.core.converters.ArffSaver;
@@ -44,7 +38,7 @@ import com.example.arthur.anti_asp.R;
 public class MainActivity extends Activity implements SensorEventListener {
   private SensorManager manager;
   private TextView values;
-  float combine;
+  float combined_acc;
   String input_csv;
   String STATUS;
 
@@ -62,7 +56,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_s.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val  = String.valueOf(combine + "," + "stand\n");
+        String val  = String.valueOf(combined_acc + "," + "stand\n");
         saveFile("acc_stand.csv", val);
       }
     });
@@ -70,7 +64,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_w.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val = String.valueOf(combine + "," + "walk\n");
+        String val = String.valueOf(combined_acc + "," + "walk\n");
         saveFile("acc_walk.csv", val);
       }
     });
@@ -78,7 +72,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     buttonSave_r.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        String val = String.valueOf(combine + "," + "run\n");
+        String val = String.valueOf(combined_acc + "," + "run\n");
         saveFile("acc_run.csv", val);
       }
     });
@@ -91,27 +85,34 @@ public class MainActivity extends Activity implements SensorEventListener {
         String path = "acc_stand.csv";
         CsvToArff(/*path, "stand"*/);
 
-        /*weka識別器生成
+        //weka
         try {
-          ConverterUtils.DataSource source = new ConverterUtils.DataSource("acc.arff");
+          //分類器生成
+          ConverterUtils.DataSource source = new ConverterUtils.DataSource("/storage/emulated/0/anti_asp/acc.arff");
           Instances instances = source.getDataSet();
           instances.setClassIndex(1);
           Classifier classifier = new J48();
           classifier.buildClassifier(instances);
+
+          //評価
+          Evaluation eval = new Evaluation(instances);
+          eval.evaluateModel(classifier, instances);
+          System.out.println(eval.toSummaryString());
+
         } catch (Exception e) {
-          e.printStackTrace();
-        }*/
+            e.printStackTrace();
+            System.out.println("分類器の作成に失敗しました");
+        }
+
       }
 
     });
-
+    //推定ボタン　実測値をwekaに渡して結果を表示
     Button button_estimate = findViewById(R.id.button_estimate);
     button_estimate.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        //String file = readFile("acc_stand.csv");
-        float combined_acc = combine;
-        //weka.main(combined_acc);//wekaに現在の3軸加速度(csv?生の値？)を引き渡し, 推定
+        weka.main(combined_acc);//wekaに現在の3軸加速度(csv?生の値？)を引き渡し, 推定
 
       }
     });
@@ -146,7 +147,7 @@ public class MainActivity extends Activity implements SensorEventListener {
           FileOutputStream fos = new FileOutputStream(new File("/storage/emulated/0/anti_asp/acc.arff"),false);
 
           // ヘッダーを設定する
-          String hedder =("@RERATION acceleration\n\n" + "@ATTRIBUTE acc real\n" + "@ATTRIBUTE state  {stand,walk,run}\n\n" + "@DATA\n");
+          String hedder =("@relation acceleration\n\n" + "@attribute acc real\n" + "@attribute state  {stand,walk,run}\n\n" + "@data\n");
           fos.write(hedder.getBytes());
 
 
@@ -232,13 +233,13 @@ public class MainActivity extends Activity implements SensorEventListener {
       float accX = event.values[SensorManager.DATA_X];
       float accY = event.values[SensorManager.DATA_Y];
       float accZ = event.values[SensorManager.DATA_Z];
-      combine = (float)sqrt(accX*accX + accY*accY + accZ*accZ);
+      combined_acc = (float)sqrt(accX*accX + accY*accY + accZ*accZ);
 
-      String str = "加速度センサの値"
+      String str = "加速度センサ"
               + "\nX: " + accX
               + "\nY: " + accY
               + "\nZ: " + accZ
-              + "\n合成加速度: " + combine;
+              + "\n合成加速度: " + combined_acc;
       values.setText(str);
     }
   }
