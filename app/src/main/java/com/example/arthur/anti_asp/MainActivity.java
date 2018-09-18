@@ -126,7 +126,22 @@ public class MainActivity extends Activity implements SensorEventListener {
 
             }
         });
-
+        //削除ボタン
+        Button Delete_button = findViewById(R.id.delete_button);
+        Delete_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                File file1 = new File("/storage/emulated/0/anti_asp/acc.arff");
+                file1.delete();
+                File file2 = new File("/storage/emulated/0/anti_asp/acc_stand.csv");
+                file2.delete();
+                File file3 = new File("/storage/emulated/0/anti_asp/acc_walk.csv");
+                file3.delete();
+                File file4 = new File("/storage/emulated/0/anti_asp/acc_run.csv");
+                file4.delete();
+                //Toast.makeText(this, "学習データの削除が完了しました", Toast.LENGTH_SHORT).show();
+                delete_Dialog();
+            }});
     }
 
     //ファイル保存
@@ -336,13 +351,25 @@ public class MainActivity extends Activity implements SensorEventListener {
         dflag = true;
         // Use the Builder class for convenient dialog construction
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("---サンプリング中---\n\n10秒ほど経過したら終了してください")
+        builder.setMessage("---サンプリング中---\n\n10秒程度経過したら終了してください")
                 .setPositiveButton("終了", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         dflag = false;
                         walk = false;
                         stand = false;
                         run = false;
+                    }
+                });
+        builder.show();
+    }
+    public void delete_Dialog(){
+        dflag = true;
+        // Use the Builder class for convenient dialog construction
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("学習データを削除しました")
+                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dflag = false;
                     }
                 });
         builder.show();
