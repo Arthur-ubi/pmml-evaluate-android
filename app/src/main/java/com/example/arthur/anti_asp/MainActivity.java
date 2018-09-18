@@ -2,6 +2,8 @@ package com.example.arthur.anti_asp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -42,8 +44,10 @@ public class MainActivity extends Activity implements SensorEventListener {
     float combined_acc;
     int counter = 0;
     boolean click_flag = false;
-    String input_csv;
-    String STATUS;
+    boolean dflag = false;
+    boolean stand = false;
+    boolean walk = false;
+    boolean run = false;
     Instances instances;
     Classifier classifier;
 
@@ -58,29 +62,32 @@ public class MainActivity extends Activity implements SensorEventListener {
         status = (TextView)findViewById(R.id.status_view);
         status.setText("待機中");
 
-        //サンプリングボタン
+    //サンプリングボタン
+        //立ち状態
         Button buttonSave_s = findViewById(R.id.button_l_stand);
         buttonSave_s.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String val  = String.valueOf(combined_acc + "," + "stand\n");
-                saveFile("acc_stand.csv", val);
+                Dialog();
+                stand = true;
             }
         });
+        //歩き状態
         Button buttonSave_w = findViewById(R.id.button_l_walk);
         buttonSave_w.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String val = String.valueOf(combined_acc + "," + "walk\n");
-                saveFile("acc_walk.csv", val);
+                Dialog();
+                walk = true;
             }
         });
+        //走り状態
         Button buttonSave_r = findViewById(R.id.button_l_run);
         buttonSave_r.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String val = String.valueOf(combined_acc + "," + "run\n");
-                saveFile("acc_run.csv", val);
+                Dialog();
+                run = true;
             }
         });
 
@@ -100,6 +107,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                     instances.setClassIndex(1);
                     classifier = new J48();
                     classifier.buildClassifier(instances);
+                    System.out.println("分類器の作成に成功しました");
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -132,7 +140,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             //PrintWriter p = new PrintWriter(new BufferedWriter(f));
 
             System.out.println("csv出力が完了しました。");
-            Toast.makeText(this, "出力が完了しました", Toast.LENGTH_SHORT).show();
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -245,6 +253,19 @@ public class MainActivity extends Activity implements SensorEventListener {
             values.setText(str);
             counter++;
 
+            //stand
+            if(dflag == true && stand == true){
+                saveFile("acc_stand.csv", String.valueOf(combined_acc + "," + "stand\n"));
+            }
+            //walk
+            else if(dflag == true && walk == true){
+                saveFile("acc_walk.csv", String.valueOf(combined_acc + "," + "walk\n"));
+            }
+            //run
+            else if(dflag == true && run == true){
+                saveFile("acc_run.csv", String.valueOf(combined_acc + "," + "run\n"));
+            }
+            //負荷軽減のために推定の間隔をセンサの更新間隔の1/10にする
             if(click_flag == true && counter%10 == 0){
                 weka();
             }
@@ -278,7 +299,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 status.setText("STANDING");
             }else if(result == 1.0){
                 //walk
-                status.setText("WALKING\n\n歩きスマホはやめましょう");
+                status.setText("WALKING\n\n歩きスマホはやめましょう！");
             }else if(result == 2.0){
                 //run
                 status.setText("RUNNING\n\n危険！走りスマホ");
@@ -310,6 +331,21 @@ public class MainActivity extends Activity implements SensorEventListener {
                     REQUEST_EXTERNAL_STORAGE_CODE
             );
         }
+    }
+    public void Dialog(){
+        dflag = true;
+        // Use the Builder class for convenient dialog construction
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("---サンプリング中---\n\n10秒ほど経過したら終了してください")
+                .setPositiveButton("終了", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dflag = false;
+                        walk = false;
+                        stand = false;
+                        run = false;
+                    }
+                });
+        builder.show();
     }
 }
 
