@@ -276,15 +276,12 @@ public class MainActivity extends Activity implements SensorEventListener {
             if (result == 0.0){
                 //stand
                 status.setText("STANDING");
-
             }else if(result == 1.0){
                 //walk
                 status.setText("WALKING\n\n歩きスマホはやめましょう");
-
             }else if(result == 2.0){
                 //run
                 status.setText("RUNNING\n\n危険！走りスマホ");
-
             }
         } catch (Exception e) {
             e.printStackTrace();
