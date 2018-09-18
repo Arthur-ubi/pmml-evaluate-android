@@ -1,12 +1,5 @@
 package com.example.arthur.anti_asp;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-
-import java.io.IOException;
-import java.util.List;
-import static java.lang.Math.sqrt;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
@@ -15,7 +8,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
@@ -23,15 +15,23 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.trees.J48;
+import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.FastVector;
+import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.converters.ArffSaver;
-import weka.core.converters.CSVLoader;
 import weka.core.converters.ConverterUtils;
 
-import com.example.arthur.anti_asp.R;
+import static java.lang.Math.sqrt;
 
 //TODO arffをwekaのデータセットに設定, サンプリングを10秒程度に設定
 
@@ -41,6 +41,8 @@ public class MainActivity extends Activity implements SensorEventListener {
   float combined_acc;
   String input_csv;
   String STATUS;
+  Instances instances;
+  Classifier classifier;
 
   /** Called when the activity is first created. */
   @Override
@@ -51,7 +53,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     values = (TextView)findViewById(R.id.text_view);
     manager = (SensorManager)getSystemService(SENSOR_SERVICE);
 
-
+    //サンプリングボタン
     Button buttonSave_s = findViewById(R.id.button_l_stand);
     buttonSave_s.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -77,7 +79,7 @@ public class MainActivity extends Activity implements SensorEventListener {
       }
     });
 
-    //学習ボタン: csvからarff生成 & wekaの学習フェーズだけ実行(その部分のcodeだけこの中にべた貼りでいいかも)
+    //学習ボタン: csvからarff生成 & wekaの学習フェーズだけ実行
     Button button_learn = findViewById(R.id.button_learn);
     button_learn.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -89,16 +91,16 @@ public class MainActivity extends Activity implements SensorEventListener {
         try {
           //分類器生成
           ConverterUtils.DataSource source = new ConverterUtils.DataSource("/storage/emulated/0/anti_asp/acc.arff");
-          Instances instances = source.getDataSet();
+          instances = source.getDataSet();
           instances.setClassIndex(1);
-          Classifier classifier = new J48();
+          classifier = new J48();
           classifier.buildClassifier(instances);
 
-          //評価
+          /*評価
           Evaluation eval = new Evaluation(instances);
           eval.evaluateModel(classifier, instances);
           System.out.println(eval.toSummaryString());
-
+          */
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("分類器の作成に失敗しました");
@@ -112,7 +114,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     button_estimate.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        weka.main(combined_acc);//wekaに現在の3軸加速度(csv?生の値？)を引き渡し, 推定
+        weka();//wekaに現在の3軸加速度を引き渡し, 推定
 
       }
     });
@@ -233,9 +235,9 @@ public class MainActivity extends Activity implements SensorEventListener {
       float accX = event.values[SensorManager.DATA_X];
       float accY = event.values[SensorManager.DATA_Y];
       float accZ = event.values[SensorManager.DATA_Z];
-      combined_acc = (float)sqrt(accX*accX + accY*accY + accZ*accZ);
+      combined_acc = (float) sqrt(accX*accX + accY*accY + accZ*accZ);
 
-      String str = "加速度センサ"
+      String str = "ACCELEROMETER"
               + "\nX: " + accX
               + "\nY: " + accY
               + "\nZ: " + accZ
@@ -243,6 +245,46 @@ public class MainActivity extends Activity implements SensorEventListener {
       values.setText(str);
     }
   }
+
+  public void weka() {
+    try {
+      Evaluation eval = new Evaluation(instances);
+      eval.evaluateModel(classifier, instances);
+      System.out.println(eval.toSummaryString());
+
+      FastVector out = new FastVector(2);
+      out.addElement("stand");
+      out.addElement("walk");
+      out.addElement("run");
+      Attribute acc = new Attribute("acc", 0);
+      Attribute state = new Attribute("state",out, 1);
+      FastVector win = new FastVector(2);
+
+      //分類したいデータを与える
+      Instance instance = new DenseInstance(3);
+      instance.setValue(acc, combined_acc);//combined_acc:MainActivityから引き渡す現在の3軸合成加速度
+      instance.setDataset(instances);
+
+      double result = classifier.classifyInstance(instance);
+      System.out.println(result);
+
+      if (result == 0.0){
+        //stand
+        System.out.println("STANDING");
+      }else if(result == 1.0){
+        //walk
+        System.out.println("WALKING");
+      }else if(result == 2.0){
+        //run
+        System.out.println("RUNNING");
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.out.println("weka分類に失敗しました");
+    }
+
+  }
+
 
   //外部ストレージに保存するためのパーミッション確認
   private static final int REQUEST_EXTERNAL_STORAGE_CODE = 0x01;

@@ -11,18 +11,8 @@
     　
 
     <TextView
-        android:id="@+id/text_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:textColor="#000" />
-
-    <TextView
         android:id="@+id/text_view"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
@@ -32,7 +22,7 @@
 
     <LinearLayout
         android:layout_width="350dp"
-        android:layout_height="203dp"
+        android:layout_height="60dp"
         android:layout_weight="1"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -75,6 +65,12 @@
             android:text="走り状態" />
 
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:text="TextView" />
 
     <LinearLayout
         android:layout_width="match_parent"
